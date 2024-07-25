@@ -46,6 +46,7 @@ BERT_ARGS="
 DATA_ARGS="
     --num-workers 16 \
     --data-path $DATA_PATH \
+    --tokenizer-type SentencePieceTokenizer \
     --tokenizer-model $TOKENIZER_MODEL \
     --data-impl mmap \
     --split 949,50,1
