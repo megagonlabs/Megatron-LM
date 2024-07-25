@@ -66,4 +66,4 @@ torchrun $DISTRIBUTED_ARGS pretrain_bert.py \
     $OUTPUT_ARGS \
     --distributed-backend nccl \
     --save $CHECKPOINT_PATH \
-    --load $CHECKPOINT_PATH &> $LOGS_PATH_`date +%Y%m%d-%H%M%S`
+    --load $CHECKPOINT_PATH &> $LOGS_PATH/jawza_pretrain_`date +%Y%m%d-%H%M%S`
