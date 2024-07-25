@@ -11,7 +11,7 @@ NODE_RANK=0
 WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 
 CHECKPOINT_PATH=$1
-VOCAB_FILE=$2
+TOKENIZER_MODEL=$2
 DATA_PATH=$3
 
 DISTRIBUTED_ARGS="
@@ -46,7 +46,7 @@ BERT_ARGS="
 DATA_ARGS="
     --num-workers 16 \
     --data-path $DATA_PATH \
-    --vocab-file $VOCAB_FILE \
+    --tokenizer-model $TOKENIZER_MODEL \
     --data-impl mmap \
     --split 949,50,1
 "
