@@ -24,15 +24,15 @@ DISTRIBUTED_ARGS="
 "
 
 BERT_ARGS="
-    --tensor-model-parallel-size 8 \
+    --tensor-model-parallel-size 4 \
     --pipeline-model-parallel-size 1 \
     --num-layers 24 \
     --hidden-size 1024 \
     --num-attention-heads 16 \
-    --seq-length 512 \
-    --max-position-embeddings 512 \
-    --micro-batch-size 2 \
-    --global-batch-size 16 \
+    --seq-length 2048 \
+    --max-position-embeddings 2048 \
+    --micro-batch-size 3 \
+    --global-batch-size 60 \
     --lr 0.0001 \
     --train-iters 1000000 \
     --lr-decay-iters 990000 \
@@ -49,6 +49,7 @@ DATA_ARGS="
     --data-path $DATA_PATH \
     --tokenizer-type SentencePieceTokenizer \
     --tokenizer-model $TOKENIZER_MODEL \
+    --vocab-size 44544 \
     --data-impl mmap \
     --split 949,50,1
 "
