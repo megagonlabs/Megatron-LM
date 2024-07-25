@@ -11,19 +11,24 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),
 import time
 import gzip
 import glob
-import torch
-import numpy as np
+#import torch
+#import numpy as np
 import multiprocessing
+"""
 try:
     import nltk
     nltk_available = True
 except ImportError:
     nltk_available = False
+"""
+import random
+import re
 
 from megatron.tokenizer import build_tokenizer
 from megatron.data import indexed_dataset
 
 
+'''
 # https://stackoverflow.com/questions/33139531/preserve-empty-lines-with-nltks-punkt-tokenizer
 class CustomLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
 
@@ -40,15 +45,32 @@ class CustomLanguageVars(nltk.tokenize.punkt.PunktLanguageVars):
 class IdentitySplitter(object):
     def tokenize(self, *text):
         return text
+'''
 
 
 class Encoder(object):
-    def __init__(self, args):
+    def __init__(
+            self,
+            args,
+            hard_split_pattern=r"""(?:\r\n){2,}|\r{2,}|\n{2,}""",  # 改行の連続
+            soft_split_pattern=r"""[!?,.:;>)}\]！？,.：；＞）｝］、。」』】〉》](?:\r\n|\r|\n)|["})\]],(?=[ "{(\[])""",  # 改行の直前が文末らしい文字 or フラットなJSONの要素区切り
+            soft_split_ratio=1,#0.125,
+            lstrip_ratio=1,#0.125,
+            rstrip_ratio=1,#0.125,
+            max_split_length=4096,
+    ):
         self.args = args
+        self.hard_split_pattern = re.compile(hard_split_pattern)
+        self.soft_split_pattern = re.compile(soft_split_pattern)
+        self.soft_split_ratio = soft_split_ratio
+        self.lstrip_ratio = lstrip_ratio
+        self.rstrip_ratio = rstrip_ratio
+        self.max_split_length = max_split_length
 
     def initializer(self):
         # Use Encoder class as a container for global data
         Encoder.tokenizer = build_tokenizer(self.args)
+        """
         if self.args.split_sentences:
             if not nltk_available:
                 print("NLTK is not available to split sentences.")
@@ -65,16 +87,34 @@ class Encoder(object):
 
         else:
             Encoder.splitter = IdentitySplitter()
+        """
 
     def split(self, json_line):
+        def _add_split(split, splits):
+            if split and random.random() < self.soft_split_ratio:
+                if random.random() >= self.lstrip_ratio:
+                    split = split.lstrip()
+                if random.random() >= self.rstrip_ratio:
+                    split = split.rstrip()
+            while len(split) > self.max_split_length:
+                splits.append(split[:self.max_split_length])
+                split = split[self.max_split_length:]
+            if split:
+                splits.append(split)
+
         data = json.loads(json_line)
         output = {}
         for key in self.args.json_keys:
             text = data[key]
-            max_len = 1000000
-            tokens_list = [Encoder.splitter.tokenize(text[i:i+max_len]) for i in range(0, len(text), max_len)]
-            output[key] = [tokens for partial in tokens_list for tokens in partial]
-        return json.dumps(output), len(json_line)
+            splits = []
+            for hard_split in self.hard_split_pattern.split(text):
+                begin = 0
+                for m in self.soft_split_pattern.finditer(hard_split):
+                    _add_split(hard_split[begin:m.end()], splits)
+                    begin = m.end()
+                _add_split(hard_split[begin:], splits)
+            output[key] = splits
+        return json.dumps(output, ensure_ascii=False), len(json_line)
 
     def encode(self, json_line):
         data = json.loads(json_line)
@@ -264,11 +304,13 @@ def main():
     args = get_args()
 
     if args.split_sentences:
+        """
         if nltk_available:
             nltk.download("punkt", quiet=True)
         else:
             raise Exception(
                 "nltk library required for sentence splitting is not available.")
+        """
 
     in_ss_out_names = []
     if args.partitions == 1:
