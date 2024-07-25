@@ -13,6 +13,7 @@ WORLD_SIZE=$(($GPUS_PER_NODE*$NNODES))
 CHECKPOINT_PATH=$1
 TOKENIZER_MODEL=$2
 DATA_PATH=$3
+LOGS_PATH=$4
 
 DISTRIBUTED_ARGS="
     --nproc_per_node $GPUS_PER_NODE \
@@ -65,4 +66,4 @@ torchrun $DISTRIBUTED_ARGS pretrain_bert.py \
     $OUTPUT_ARGS \
     --distributed-backend nccl \
     --save $CHECKPOINT_PATH \
-    --load $CHECKPOINT_PATH
+    --load $CHECKPOINT_PATH &> $LOGS_PATH_`date +%Y%m%d-%H%M%S`
