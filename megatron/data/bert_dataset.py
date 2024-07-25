@@ -130,7 +130,8 @@ def build_training_sample(sample,
     max_predictions_per_seq = masked_lm_prob * max_num_tokens
     (tokens, masked_positions, masked_labels, _, _) = create_masked_lm_predictions(
         tokens, vocab_id_list, vocab_id_to_token_dict, masked_lm_prob,
-        cls_id, sep_id, mask_id, max_predictions_per_seq, np_rng)
+        cls_id, sep_id, mask_id, max_predictions_per_seq, np_rng,
+        max_ngrams=13, do_whole_word_mask=False, geometric_dist=True)
 
     # Padding.
     tokens_np, tokentypes_np, labels_np, padding_mask_np, loss_mask_np \
