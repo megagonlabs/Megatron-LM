@@ -31,7 +31,7 @@ BERT_ARGS="
     --num-attention-heads 16 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 3 \
+    --micro-batch-size 6 \
     --global-batch-size 60 \
     --lr 0.0001 \
     --train-iters 1000000 \
@@ -51,14 +51,14 @@ DATA_ARGS="
     --tokenizer-model $TOKENIZER_MODEL \
     --vocab-size 44544 \
     --data-impl mmap \
-    --split 949,50,1
+    --split 998,1,1
 "
 
 OUTPUT_ARGS="
-    --log-interval 100 \
-    --save-interval 10000 \
+    --log-interval 1 \
+    --save-interval 1000 \
     --eval-interval 1000 \
-    --eval-iters 10
+    --eval-iters 100
 "
 
 torchrun $DISTRIBUTED_ARGS pretrain_bert.py \
