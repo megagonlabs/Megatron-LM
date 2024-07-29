@@ -24,15 +24,15 @@ DISTRIBUTED_ARGS="
 "
 
 BERT_ARGS="
-    --tensor-model-parallel-size 4 \
+    --tensor-model-parallel-size 1 \
     --pipeline-model-parallel-size 1 \
     --num-layers 24 \
     --hidden-size 1024 \
     --num-attention-heads 16 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 6 \
-    --global-batch-size 60 \
+    --micro-batch-size 1 \
+    --global-batch-size 64 \
     --lr 0.0001 \
     --train-iters 1000000 \
     --lr-decay-iters 990000 \
