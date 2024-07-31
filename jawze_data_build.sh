@@ -4,13 +4,15 @@ set -e
 
 TOKENIZER_MODEL=$1
 INPUT_JSON_GZ_PREFIX=$2
-OUTPUT_PREFIX=$3
+PARTITION_ZERO_DIGITS=$3
+OUTPUT_PREFIX=$4
 
 PARTITIONS=`ls ${INPUT_JSON_GZ_PREFIX}_*.jsonl.gz | wc -l` 
 
 python tools/preprocess_data.py \
   --input ${INPUT_JSON_GZ_PREFIX}.jsonl.gz \
   --partitions ${PARTITIONS} \
+  --partition-zero-digits ${PARTITION_ZERO_DIGITS} \
   --workers ${PARTITIONS} \
   --dataset-impl mmap \
   --output-prefix ${OUTPUT_PREFIX} \
