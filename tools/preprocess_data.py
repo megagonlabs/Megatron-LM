@@ -279,6 +279,8 @@ def get_args():
     group.add_argument('--keep-sequential-samples', action='store_true',
                        help='Ensure ordering of samples in .jsonl files is '
                             'preserved when using partitions>1.')
+    group.add_argument('--partition-zero-digits', type=int, default=0,
+                       help='Number of zero digits of partition index in input JSON file name')
     args = parser.parse_args()
     args.keep_empty = False
 
@@ -301,9 +303,9 @@ def get_file_name(args, file_id):
         extension = original_extension + extension
     else:
         original_extension = extension
-    input_file_name = f"{file_name}_{file_id:0=3}{extension}"
-    sentence_split_file = f"{file_name}_ss_{file_id:0=3}{original_extension}"
-    output_prefix = f"{args.output_prefix}_{file_id:0=3}"
+    input_file_name = f"{file_name}_{file_id}{extension}"
+    sentence_split_file = f"{file_name}_ss_{file_id}{original_extension}"
+    output_prefix = f"{args.output_prefix}_{file_id}"
     file_names = {
         'partition': input_file_name,
         'sentence_split': sentence_split_file,
@@ -354,7 +356,7 @@ def main():
 
         # create .jsonl parition files
         for idx in range(args.partitions):
-            in_ss_out_name = get_file_name(args, idx)
+            in_ss_out_name = get_file_name(args, ("{:0=" + args.partition_zero_digits + "}").format(idx))
             in_ss_out_names.append(in_ss_out_name)
 
         # check to see if paritions were already created
