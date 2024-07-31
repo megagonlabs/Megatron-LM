@@ -356,7 +356,7 @@ def main():
 
         # create .jsonl parition files
         for idx in range(args.partitions):
-            in_ss_out_name = get_file_name(args, ("{:0=" + args.partition_zero_digits + "}").format(idx))
+            in_ss_out_name = get_file_name(args, ("{:0=" + str(args.partition_zero_digits) + "}").format(idx))
             in_ss_out_names.append(in_ss_out_name)
 
         # check to see if paritions were already created
