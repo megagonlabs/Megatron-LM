@@ -48,23 +48,32 @@ class IdentitySplitter(object):
 '''
 
 
+def open_gzip_text(p, mode):
+    if p.endswith(".gz") or p.endswith(".gzip"):
+        return gzip.open(p, f"{mode}t", encoding="utf8")
+    else:
+        return open(p, mode, encoding="utf8")
+
+
 class Encoder(object):
     def __init__(
             self,
             args,
             hard_split_pattern=r"""(?:\r\n){2,}|\r{2,}|\n{2,}""",  # 改行の連続
-            soft_split_pattern=r"""[!?,.:;>)}\]！？,.：；＞）｝］、。」』】〉》](?:\r\n|\r|\n)|["})\]],(?=[ "{(\[])""",  # 改行の直前が文末らしい文字 or フラットなJSONの要素区切り
-            soft_split_ratio=1,#0.125,
-            lstrip_ratio=1,#0.125,
-            rstrip_ratio=1,#0.125,
+            hard_split_probability=0.95,
+            soft_split_pattern=r"""[!?,.:;>)}\]！？,.：；＞）｝］、。」』】〉》](?:\r\n|\r|\n)+|["})\]],(?=[ "{(\[])""",  # 改行の直前が文末らしい文字 or フラットなJSONの要素区切り
+            soft_split_probability=0.25,
+            lstrip_probability=0.5,
+            rstrip_probability=0.5,
             max_split_length=4096,
     ):
         self.args = args
         self.hard_split_pattern = re.compile(hard_split_pattern)
+        self.hard_split_probability = hard_split_probability
         self.soft_split_pattern = re.compile(soft_split_pattern)
-        self.soft_split_ratio = soft_split_ratio
-        self.lstrip_ratio = lstrip_ratio
-        self.rstrip_ratio = rstrip_ratio
+        self.soft_split_probability = soft_split_probability
+        self.lstrip_probability = lstrip_probability
+        self.rstrip_probability = rstrip_probability
         self.max_split_length = max_split_length
 
     def initializer(self):
@@ -91,10 +100,10 @@ class Encoder(object):
 
     def split(self, json_line):
         def _add_split(split, splits):
-            if split and random.random() < self.soft_split_ratio:
-                if random.random() >= self.lstrip_ratio:
+            if split and random.random() < self.soft_split_probability:
+                if random.random() >= self.lstrip_probability:
                     split = split.lstrip()
-                if random.random() >= self.rstrip_ratio:
+                if random.random() >= self.rstrip_probability:
                     split = split.rstrip()
             while len(split) > self.max_split_length:
                 splits.append(split[:self.max_split_length])
@@ -107,12 +116,16 @@ class Encoder(object):
         for key in self.args.json_keys:
             text = data[key]
             splits = []
-            for hard_split in self.hard_split_pattern.split(text):
-                begin = 0
-                for m in self.soft_split_pattern.finditer(hard_split):
-                    _add_split(hard_split[begin:m.end()], splits)
-                    begin = m.end()
-                _add_split(hard_split[begin:], splits)
+            h_begin = 0
+            for h_end in [_.end() for _ in self.hard_split_pattern.finditer(text)] + [len(text)]:
+                if random.random() < self.hard_split_probability or h_end == len(text):
+                    hard_split = text[h_begin:h_end]
+                    s_begin = 0
+                    for s in self.soft_split_pattern.finditer(hard_split):
+                        _add_split(hard_split[s_begin:s.end()], splits)
+                        s_begin = s.end()
+                    _add_split(hard_split[s_begin:], splits)
+                    h_begin = h_end
             output[key] = splits
         return json.dumps(output, ensure_ascii=False), len(json_line)
 
@@ -158,8 +171,8 @@ class Partition(object):
     def split_sentences(self, file_name):
         input_file_name, output_file_name = file_name
         print("Opening", input_file_name)
-        fin = open(input_file_name, 'r', encoding='utf-8')
-        fout = open(output_file_name, 'w')
+        fin = open_gzip_text(input_file_name, 'r')
+        fout = open_gzip_text(output_file_name, 'w')
 
         encoder = Encoder(self.args)
         pool = multiprocessing.Pool(self.workers, initializer=encoder.initializer)
@@ -179,7 +192,7 @@ class Partition(object):
     def process_json_file(self, file_name):
         input_file_name, output_prefix = file_name
         print("Opening", input_file_name)
-        fin = open(input_file_name, 'r', encoding='utf-8')
+        fin = open_gzip_text(input_file_name, 'r')
 
         startup_start = time.time()
         encoder = Encoder(self.args)
@@ -283,9 +296,14 @@ def get_args():
 
 def get_file_name(args, file_id):
     file_name, extension = os.path.splitext(args.input)
-    input_file_name = file_name + "_" + str(file_id) + extension
-    sentence_split_file = file_name + "_ss_" + str(file_id) + extension
-    output_prefix = args.output_prefix + "_" + str(file_id)
+    if extension in [".gz", ".gzip"]:
+        file_name, original_extension = os.path.splitext(file_name)
+        extension = original_extension + extension
+    else:
+        original_extension = extension
+    input_file_name = f"{file_name}_{file_id:0=3}{extension}"
+    sentence_split_file = f"{file_name}_ss_{file_id:0=3}{original_extension}"
+    output_prefix = f"{args.output_prefix}_{file_id:0=3}"
     file_names = {
         'partition': input_file_name,
         'sentence_split': sentence_split_file,
@@ -328,7 +346,7 @@ def main():
         if args.keep_sequential_samples:
             total_sample_count = 0
             for filename in in_file_names:
-                with open(filename, "r") as fin:
+                with open_gzip_text(filename, "r") as fin:
                     for fc, _ in enumerate(fin):
                         pass
                 total_sample_count += (fc + 1)
@@ -349,17 +367,14 @@ def main():
             # populate .jsonl partition files from parent files
             partitioned_input_files = []
             for idx in range(args.partitions):
-                partitioned_input_file = open(in_ss_out_names[idx]['partition'], 'w')
+                partitioned_input_file = open_gzip_text(in_ss_out_names[idx]['partition'], 'w')
                 partitioned_input_files.append(partitioned_input_file)
 
             index = 0
             if args.keep_sequential_samples: line_count = 0
             for in_file_name in in_file_names:
                 # support for gzip files
-                if in_file_name.endswith(".gz"):
-                    fin = gzip.open(in_file_name, 'rt')
-                else:
-                    fin = open(in_file_name, 'r', encoding='utf-8')
+                fin = open_gzip_text(in_file_name, 'r')
 
                 for line in fin:
                     partitioned_input_files[index].write(line)
