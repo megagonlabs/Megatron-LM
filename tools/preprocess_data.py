@@ -49,6 +49,7 @@ class IdentitySplitter(object):
 
 
 def open_gzip_text(p, mode):
+    print("Opening", p, mode)
     if p.endswith(".gz") or p.endswith(".gzip"):
         return gzip.open(p, f"{mode}t", encoding="utf8")
     else:
@@ -170,7 +171,6 @@ class Partition(object):
 
     def split_sentences(self, file_name):
         input_file_name, output_file_name = file_name
-        print("Opening", input_file_name)
         fin = open_gzip_text(input_file_name, 'r')
         fout = open_gzip_text(output_file_name, 'w')
 
@@ -191,7 +191,6 @@ class Partition(object):
 
     def process_json_file(self, file_name):
         input_file_name, output_prefix = file_name
-        print("Opening", input_file_name)
         fin = open_gzip_text(input_file_name, 'r')
 
         startup_start = time.time()
