@@ -54,6 +54,8 @@ def get_datasets_weights_and_num_samples(data_prefix,
     for i in range(num_datasets):
         weights[i] = 1.0 #float(data_prefix[2*i])
         prefixes[i] = data_prefix[i].strip() #(data_prefix[2*i+1]).strip()
+        if prefixes[i].endswith(".idx") or prefixes[i].endswith(".bin"):
+            prefixes[i] = prefixes[i][:-4]
     # Normalize weights
     weight_sum = 0.0
     for weight in weights:
