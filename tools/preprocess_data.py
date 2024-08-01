@@ -49,8 +49,9 @@ class IdentitySplitter(object):
 
 
 def open_gzip_text(p, mode):
-    print("Opening", p, mode)
+    print(f"open({p}, {mode})")
     if p.endswith(".gz") or p.endswith(".gzip"):
+        assert mode != "w" or not os.path.exists(p), f"{p} already exists. Check your settings."
         return gzip.open(p, f"{mode}t", encoding="utf8")
     else:
         return open(p, mode, encoding="utf8")
