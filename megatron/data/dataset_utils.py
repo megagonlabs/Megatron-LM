@@ -196,6 +196,7 @@ def create_masked_lm_predictions(tokens,
                                  favor_longer_ngram=False,
                                  do_permutation=False,
                                  geometric_dist=False,
+                                 geometric_p=0.2,
                                  masking_style="bert"):
     """Creates the predictions for the masked LM objective.
     Note: Tokens here are vocab ids and not text tokens."""
@@ -276,7 +277,7 @@ def create_masked_lm_predictions(tokens,
             # Sampling "n" from the geometric distribution and clipping it to
             # the max_ngrams. Using p=0.2 default from the SpanBERT paper
             # https://arxiv.org/pdf/1907.10529.pdf (Sec 3.1)
-            n = min(np_rng.geometric(0.2), max_ngrams)
+            n = min(np_rng.geometric(geometric_p), max_ngrams)
 
         index_set = sum(cand_index_set[n - 1], [])
         n -= 1
