@@ -31,8 +31,8 @@ BERT_ARGS="
     --num-attention-heads 16 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 1 \
-    --global-batch-size 64 \
+    --micro-batch-size 8 \
+    --global-batch-size 192 \
     --lr 0.0001 \
     --train-iters 1000000 \
     --lr-decay-iters 990000 \
@@ -55,10 +55,10 @@ DATA_ARGS="
 "
 
 OUTPUT_ARGS="
-    --log-interval 1 \
-    --save-interval 1000 \
-    --eval-interval 1000 \
-    --eval-iters 100
+    --log-interval 10 \
+    --save-interval 10000 \
+    --eval-interval 10000 \
+    --eval-iters 40
 "
 
 torchrun $DISTRIBUTED_ARGS pretrain_bert.py \
