@@ -48,7 +48,7 @@ class BlendableDataset(torch.utils.data.Dataset):
         desc = "Blendable dataset\n\n"
         desc += "Datasets:\n"
         for dataset in datasets:
-            desc += dataset.desc + "\n\n"
+            desc += dataset.name + "\n\n"
         desc += f"Weights: {weights}\n"
         desc += f"Size: {size}\n"
         self.desc = desc
