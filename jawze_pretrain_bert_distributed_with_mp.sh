@@ -31,7 +31,7 @@ BERT_ARGS="
     --num-attention-heads 16 \
     --seq-length 2048 \
     --max-position-embeddings 2048 \
-    --micro-batch-size 8 \
+    --micro-batch-size 6 \
     --global-batch-size 192 \
     --lr 0.0001 \
     --train-iters 1000000 \
